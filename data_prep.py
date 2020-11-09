@@ -5,13 +5,25 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import torchvision
 
+#Puts all the transforms together and applies them
+class ImageTargetCompose(object):
+    def __init__(self, transforms):
+
+        self.transforms = transforms
+  
+
+    def __call__(self, image, target):
+        for trans in self.transforms:
+            image, target = trans(image, target)
+        return image, target
+
 #turns the image into a tensor
 class ImageTargetToTensor(object):
     def __call__(self, image, target):
         transform = torchvision.transforms.ToTensor()
         image = transform(image)
         target = transform(target)
-        return (image, target)
+        return image, target
 
 
 #resizes the image and the target
@@ -23,7 +35,7 @@ class ImageTargetResize(object):
         size_transform = torchvision.transforms.Resize(self.size)
         image = size_transform(image)
         target = size_transform(target)
-        return (image, target)
+        return image, target
 
 
 if __name__ == "__main__":
