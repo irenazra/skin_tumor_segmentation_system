@@ -74,5 +74,9 @@ class segmentation_model (LightningModule):
     # TODO: IMPLEMENT THESE METHODS
 
 
+if __name__ == "__main__":
+    model = segmentation_model()
+    trainer = LightningModule.Trainer(max_epochs=2, batch_size=16)
+    trainer.fit(model)
 
     

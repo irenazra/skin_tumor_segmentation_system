@@ -6,7 +6,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 import torchvision
 
 #Puts all the transforms together and applies them
-class ImageTargetCompose(object):
+class PerformTransforms(object):
     def __init__(self, transforms):
 
         self.transforms = transforms
