@@ -1,4 +1,5 @@
 import torch
+from torch import Tensor
 from torch.nn import functional as F
 from torch import nn
 from pytorch_lightning.core.lightning import LightningModule
@@ -21,7 +22,7 @@ class UnetDown (nn.Module):
         super().__init__()
         self.conv1 = ConvNormRelu(in_channels,out_channels)
         self.conv2 = ConvNormRelu(out_channels,out_channels)
-        self.rpad = nn.ReplocationPad2d(1)
+        self.rpad = nn.ReplicationPad2d(1)
         
 
     def forward(self,x:Tensor) -> Tensor:
@@ -33,11 +34,11 @@ class UnetDown (nn.Module):
         return self.pool(p2), p2
 
 class UnetUp(nn.Module):
-    def __init__(self, in_channels, mid_channels,_out_channels) :
+    def __init__(self, in_channels, mid_channels,out_channels) :
         super().__init__()
         self.conv1 = ConvNormRelu(in_channels,mid_channels)
         self.conv2 = ConvNormRelu(mid_channels,mid_channels)
-        self.rpad = nn.ReplocationPad2d(1)
+        self.rpad = nn.ReplicationPad2d(1)
         self.trans = nn.ConvTranspose2d(mid_channels, out_channels, 2, stride=2)
     
 
@@ -56,7 +57,7 @@ class UnetOut(nn.Module):
         super().__init__()
         self.conv1 = ConvNormRelu(in_channels,mid_channels)
         self.conv2 = ConvNormRelu(mid_channels,mid_channels)
-        self.rpad = nn.ReplocationPad2d(1)
+        self.rpad = nn.ReplicationPad2d(1)
         self.conv3 = nn.Conv2d(mid_channels, out_channels, 1)
 
     def forward(self,x:Tensor) -> Tensor:
@@ -70,7 +71,6 @@ class UnetOut(nn.Module):
 
 
 class Unet(nn.Module):
-
 
     def __init__(self, num_in_channels: int = 3, num_out_channels: int = 3, max_features: int = 1024):
    
@@ -95,7 +95,7 @@ class Unet(nn.Module):
         self.deconv_block4 = UnetUp(
             features_3, features_2, features_1)
 
-        self.output_block = UnetOut(features_2, num_out_channels)
+        self.output_block = UnetOut(features_2, int(features_2/2), num_out_channels)
 
     def forward(self, x: Tensor) -> Tensor:
     

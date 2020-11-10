@@ -2,16 +2,20 @@ import torch
 from torch.nn import functional as F
 from torch import nn
 from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning import Trainer
+import pytorch_lightning
 import Unet 
 import dataset
 import data_prep
+import argparse 
 
 class segmentation_model (LightningModule):
-    def __init__(self,parameters):
+    def __init__(self, parameters):
         super().__init__()
         #initialize the unet model here
-        self.model = Unet(3,3,256)
+        self.model = Unet.Unet(3,3,256)
         self.parameters = parameters
+        self.image_size = 256
 
 
     def forward(self,x):
@@ -44,19 +48,19 @@ class segmentation_model (LightningModule):
     def prepare_data(self):
         trans = data_prep.PerformTransforms([
             data_prep.ImageTargetResize(
-                (self.parameters.image_size, self.parameters.image_size)),
+                (self.image_size, self.image_size)),
             data_prep.ImageTargetToTensor()
         ])
     
-        dataset = dataset(trans)
+        data_set = dataset.dataset(trans)
         #self.test_data = we can make this come from a different folder
 
-        num_data = len(dataset)
+        num_data = len(data_set)
         training_ratio = 0.7
-        training_number = training_ratio * num_data
+        training_number = int(training_ratio * num_data)
 
-        self.training_data = dataset[0:training_number]
-        self.validation_data = dataset[training_number:(num_data - 1)]
+        self.training_data = data_set[0:training_number]
+        self.validation_data = data_set[training_number:(num_data - 1)]
         
    
     def train_dataloader(self):
@@ -75,8 +79,14 @@ class segmentation_model (LightningModule):
 
 
 if __name__ == "__main__":
-    model = segmentation_model()
-    trainer = LightningModule.Trainer(max_epochs=2, batch_size=16)
+    parser = argparse.ArgumentParser(description='UI Segmentation Training')
+    parser = pytorch_lightning.Trainer.add_argparse_args(parser)
+    args = parser.parse_args()
+    parser.add_argument('-b', '--batch-size', default=16, type=int)
+    parser.add_argument("--image_size", type=int, default=256,
+                        help="size of training images, default is 256")
+    model = segmentation_model(args)
+    trainer = Trainer(max_epochs=2)
     trainer.fit(model)
 
     
