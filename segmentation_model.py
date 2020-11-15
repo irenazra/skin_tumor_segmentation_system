@@ -29,13 +29,13 @@ class segmentation_model (LightningModule):
     def training_step(self,batch,batch_idx):
         x,y = batch
         y_hat = self(x)
-        loss = F.cross_entropy(y_hat,y)
+        loss = F.binary_cross_entropy_with_logits(y_hat,y)
         return loss
 
     def validation_step(self,batch,batch_idx):
         x,y = batch
         y_hat = self(x)
-        val_loss = F.cross_entropy(y_hat,y)
+        val_loss = F.binary_cross_entropy_with_logits(y_hat,y)
         return val_loss
 
     def test_step(self,batch,batch_idx):
@@ -58,9 +58,13 @@ class segmentation_model (LightningModule):
         num_data = len(data_set)
         training_ratio = 0.7
         training_number = int(training_ratio * num_data)
-
-        self.training_data = data_set[0:training_number]
-        self.validation_data = data_set[training_number:(num_data - 1)]
+        #self.training_data = data_set[0:training_number]
+        self.training_data = torch.utils.data.Subset(
+                data_set, [0])
+        #self.validation_data = data_set[training_number:(num_data - 1)]
+        #self.validation_data = data_set[1:] # Crappy version 
+        self.validation_data = torch.utils.data.Subset(
+                data_set, [1])
         
    
     def train_dataloader(self):
@@ -87,7 +91,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     model = segmentation_model(args)
-    trainer = Trainer(max_epochs=2)
+    trainer = Trainer(max_epochs=5)
     trainer.fit(model)
 
     
