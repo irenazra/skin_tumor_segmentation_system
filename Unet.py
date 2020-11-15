@@ -9,12 +9,21 @@ class ConvNormRelu(nn.Module):
     def __init__(self, in_features: int, out_features: int):
 
         super(ConvNormRelu, self).__init__()
+        print()
+        print("IN FEATS", in_features)
+        print("OUT FEATS",out_features)
         self.layers = nn.Sequential(
             nn.Conv2d(in_features, out_features, 3),
             nn.BatchNorm2d(out_features),
             nn.ReLU())
+        self.in_features = in_features
+        self.out_features = out_features
         
     def forward(self, x: Tensor) -> Tensor:
+        print()
+        print("ERROR", self.in_features,self.out_features )
+        print("X SHAPE", x.shape)
+        print()
         return self.layers(x) 
 
 class UnetDown (nn.Module):

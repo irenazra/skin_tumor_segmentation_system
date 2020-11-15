@@ -14,7 +14,7 @@ class segmentation_model (LightningModule):
         super().__init__()
         #initialize the unet model here
         self.model = Unet.Unet(3,3,256)
-        self.parameters = parameters
+        self.TEST_params = parameters
         self.image_size = 256
 
 
@@ -23,7 +23,7 @@ class segmentation_model (LightningModule):
         return self.model(x)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr = 1e-3)
+        optimizer = torch.optim.Adam(self.model.parameters(), lr = 1e-3)
         return optimizer
 
     def training_step(self,batch,batch_idx):
@@ -64,11 +64,11 @@ class segmentation_model (LightningModule):
         
    
     def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.training_data, batch_size=self.parameters.batch_size,shuffle=True) 
+        return torch.utils.data.DataLoader(self.training_data, batch_size=self.TEST_params.batch_size,shuffle=True) 
 
  
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.validation_data, batch_size=self.parameters.batch_size,shuffle=True) 
+        return torch.utils.data.DataLoader(self.validation_data, batch_size=self.TEST_params.batch_size,shuffle=True) 
 
     
     #def test_dataloader(self):
@@ -81,10 +81,11 @@ class segmentation_model (LightningModule):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='UI Segmentation Training')
     parser = pytorch_lightning.Trainer.add_argparse_args(parser)
-    args = parser.parse_args()
     parser.add_argument('-b', '--batch-size', default=16, type=int)
     parser.add_argument("--image_size", type=int, default=256,
                         help="size of training images, default is 256")
+    args = parser.parse_args()
+
     model = segmentation_model(args)
     trainer = Trainer(max_epochs=2)
     trainer.fit(model)
