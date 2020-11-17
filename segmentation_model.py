@@ -8,6 +8,9 @@ import Unet
 import dataset
 import data_prep
 import argparse 
+import torchvision
+import PIL
+from PIL import Image  
 
 class segmentation_model (LightningModule):
     def __init__(self, parameters):
@@ -35,6 +38,11 @@ class segmentation_model (LightningModule):
     def validation_step(self,batch,batch_idx):
         x,y = batch
         y_hat = self(x)
+        img = torchvision.utils.make_grid(torch.cat((x,y,y_hat)), nrow=x.shape[0], padding=10)
+        path  = './Preds/'
+        name = path+str(batch_idx)+".jpg"
+        torchvision.utils.save_image(img, name)
+
         val_loss = F.binary_cross_entropy_with_logits(y_hat,y)
         return val_loss
 
@@ -53,18 +61,16 @@ class segmentation_model (LightningModule):
         ])
     
         data_set = dataset.dataset(trans)
-        #self.test_data = we can make this come from a different folder
 
         num_data = len(data_set)
+        indices = torch.randperm(num_data).tolist()
         training_ratio = 0.7
         training_number = int(training_ratio * num_data)
-        #self.training_data = data_set[0:training_number]
+
         self.training_data = torch.utils.data.Subset(
-                data_set, [0])
-        #self.validation_data = data_set[training_number:(num_data - 1)]
-        #self.validation_data = data_set[1:] # Crappy version 
+                data_set, indices[0:training_number])
         self.validation_data = torch.utils.data.Subset(
-                data_set, [1])
+                data_set, indices[training_number:])
         
    
     def train_dataloader(self):
@@ -73,13 +79,6 @@ class segmentation_model (LightningModule):
  
     def val_dataloader(self):
         return torch.utils.data.DataLoader(self.validation_data, batch_size=self.TEST_params.batch_size,shuffle=True) 
-
-    
-    #def test_dataloader(self):
-        #return torch.utils.data.DataLoader(self.test_data, batch_size=self.parameters.batch_size,shuffle=True) 
-
-    # We might need to add methods to save images aand log val loss etc
-    # TODO: IMPLEMENT THESE METHODS
 
 
 if __name__ == "__main__":
