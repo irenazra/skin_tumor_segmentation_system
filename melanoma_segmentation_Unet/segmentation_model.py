@@ -54,7 +54,7 @@ class segmentation_model (LightningModule): # class  that wraps the entire model
         # Make 3-row image with the actual image, target, and prediction
         img = torchvision.utils.make_grid(torch.cat((x,y,y_hat)), nrow=x.shape[0], padding=10)
         path  = './Preds/'
-        name = path+str(batch_idx)+".jpg" # custom name based on batch index
+        name = path+str(batch_idx)+"_epoch_"+str(self.current_epoch)+".jpg" # custom name based on batch index and epoch
         torchvision.utils.save_image(img, name) # save image
         
         return val_loss # return validation loss
