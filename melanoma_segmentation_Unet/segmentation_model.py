@@ -14,6 +14,8 @@ import argparse
 import torchvision
 import PIL
 from PIL import Image  
+from pytorch_lightning.loggers import TensorBoardLogger
+
 
 class segmentation_model (LightningModule): # class  that wraps the entire model
     def __init__(self, parameters):
@@ -39,6 +41,7 @@ class segmentation_model (LightningModule): # class  that wraps the entire model
         x,y = batch  # get an image and target
         y_hat = self(x) # create prediction
         loss = F.binary_cross_entropy_with_logits(y_hat,y) # evaluate using cross-entropy loss
+        self.logger.experiment.add_scalar('training/Train_Loss', loss, self.global_step) # Log results
         return loss # return training loss
 
     # Determine how to conduct a validation step (similar to training step)
@@ -53,15 +56,17 @@ class segmentation_model (LightningModule): # class  that wraps the entire model
         path  = './Preds/'
         name = path+str(batch_idx)+".jpg" # custom name based on batch index
         torchvision.utils.save_image(img, name) # save image
-
+        
         return val_loss # return validation loss
+    
+    # Log results at the end of an epoch
+    def training_epoch_end(self,outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean() # average over epoch
+        self.logger.experiment.add_scalar('epoch/Train_Loss', avg_loss, self.current_epoch) # Log results
 
-    # Determine how to conduct a test  step
-    def test_step(self,batch,batch_idx):
-        x,y = batch
-        y_hat = self(x)
-        test_loss = F.cross_entropy(y_hat,y)
-        return test_loss
+    def validation_epoch_end(self,outputs):
+        avg_loss =  torch.mean(torch.stack(outputs)) # average over epoch
+        self.logger.experiment.add_scalar('epoch/Validation_Loss', avg_loss, self.current_epoch) # Log results
 
     # Lightning calls this at the beginning only once
     # Perpares data by applying transforms and makes the dataset
@@ -89,11 +94,11 @@ class segmentation_model (LightningModule): # class  that wraps the entire model
    
     # Torch data_loader for training data
     def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.training_data, batch_size=self.TEST_params.batch_size,shuffle=True) 
+        return torch.utils.data.DataLoader(self.training_data, batch_size=self.TEST_params.batch_size,shuffle=True, num_workers=8) 
 
     # Torch data_loader for validation data
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.validation_data, batch_size=self.TEST_params.batch_size,shuffle=True) 
+        return torch.utils.data.DataLoader(self.validation_data, batch_size=self.TEST_params.batch_size, num_workers=8) 
 
 
 # Main method
@@ -105,10 +110,16 @@ if __name__ == "__main__":
     parser.add_argument("--image_size", type=int, default=256,
                         help="size of training images, default is 256")
     args = parser.parse_args()
-
-    # Define and tain model
+    
+    # Create Logger
+    logger = TensorBoardLogger(save_dir="logs", name="unet")
+    
+    # Define and train model
     model = segmentation_model(args)
-    trainer = Trainer(max_epochs=5)
+    trainer = Trainer(max_epochs=50, gpus=1, logger=logger)
     trainer.fit(model)
-
+    
+    # Save & Load Model
+    trainer.save_checkpoint("unet.ckpt")
+    # loadedModel = MyModel.load_from_checkpoint(checkpoint_path="unet.ckpt")
     
