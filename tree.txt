@@ -1,0 +1,13 @@
+Folder PATH listing for volume DATA
+Volume serial number is 0EA8-1D4C
+D:.
+\---melanoma_segmentation_Unet
+    +---data
+    |   +---Masks
+    |   \---Training
+    +---logs
+    |   \---unet
+    |       +---version_0
+    |       \---version_1
+    +---Preds
+    \---__pycache__
